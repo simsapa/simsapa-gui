@@ -1,0 +1,24 @@
+{
+    "name": "simsapa-gui",
+    "version": "0.1.0",
+    "description": "",
+    "main": "index.js",
+    "repository": "https://github.com/simsapa/simsapa-gui",
+    "author": "gambhiro",
+    "license": "MIT",
+    "scripts": {
+        "sass-build": "npm run sass-build-clean && npm run sass-build-sass && npm run sass-build-autoprefix",
+        "sass-build-autoprefix": "postcss --use autoprefixer --map false --output ./src/static/assets/stylesheets/main.css ./src/static/assets/stylesheets/main.css",
+        "sass-build-cleancss": "cleancss -o ./src/static/assets/stylesheets/main.min.css ./src/static/assets/stylesheets/main.css",
+        "sass-build-clean": "rimraf ./src/static/assets/stylesheets",
+        "sass-build-sass": "node-sass --output-style expanded --source-map true ./gui-src/sass/main.sass ./src/static/assets/stylesheets/main.css",
+        "sass-start": "npm run sass-build-sass -- --watch"
+    },
+    "devDependencies": {
+        "autoprefixer": "^9.1.5",
+        "clean-css-cli": "^4.2.1",
+        "node-sass": "^4.9.3",
+        "postcss-cli": "^6.0.0",
+        "rimraf": "^2.6.2"
+    }
+}

@@ -1,0 +1,17 @@
+*.swp
+.#*
+TAGS
+.DS_Store
+*.log
+**/auto/
+
+node_modules/
+
+# elm
+gui-src/elm/repl-temp-*
+gui-src/elm/elm-stuff/
+gui-src/elm/node_modules/
+
+src/static/elm.js
+src/static/assets/stylesheets/main.css
+src/static/assets/stylesheets/main.css.map
