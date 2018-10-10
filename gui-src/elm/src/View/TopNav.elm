@@ -1,5 +1,7 @@
 module View.TopNav exposing (Model, Msg(..), initialModel, update, view)
 
+import Bulma.Columns exposing (..)
+import Bulma.Layout as BL exposing (..)
 import Bulma.Components exposing (..)
 import Bulma.Elements as BE exposing (..)
 import Bulma.Form exposing (..)
@@ -9,11 +11,22 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Route exposing (Route)
 
+
+cM =
+    columnModifiers
+
+
+cSM =
+    columnsModifiers
+
+
+
 -- NOTE: transparent doesn't seem to work, using custom css instead
 -- { navbarModifiers | transparent = True }
 
-view : (Msg m -> m) -> Model -> Maybe (List (Html m)) -> Html m
-view lift model buttons =
+
+view : (Msg m -> m) -> Model -> Maybe (List (Html m)) -> Maybe (List (Html m)) -> Html m
+view lift model buttons search =
     let
         buttonsContent =
             case buttons of
@@ -22,9 +35,18 @@ view lift model buttons =
 
                 Just x ->
                     x
+
+        searchContent =
+            case search of
+                Nothing ->
+                    []
+
+                Just x ->
+                    x
     in
-    navbar navbarModifiers
-        [ class "is-fixed-top" ]
+    fixedNavbar Top
+        navbarModifiers
+        []
         [ navbarBrand []
             (navbarBurger model.isMenuOpen
                 [ onClick (lift ToggleMenu)
@@ -47,6 +69,13 @@ view lift model buttons =
             [ navbarStart []
                 [ menuItem "Texts" "mdi-book-open" Route.SearchTexts lift model
                 , menuItem "Dictionary" "mdi-notebook" Route.SearchDictionary lift model
+                ]
+            ]
+        , navbarItem False
+            [ class "navbar-fixed-search" ]
+            [ columns cSM []
+                [ column cM [ class "is-half" ]
+                    searchContent
                 ]
             ]
         ]

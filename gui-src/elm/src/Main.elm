@@ -119,12 +119,12 @@ viewBody model =
     in
     case model.route of
         Route.Home ->
-            [ topNav Nothing
+            [ topNav Nothing Nothing
             , div [] [ text "hey home" ]
             ]
 
         Route.ReadText ->
-            [ topNav Nothing
+            [ topNav Nothing Nothing
             , div [] [ text "hey read texts" ]
             ]
 

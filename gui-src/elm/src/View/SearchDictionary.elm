@@ -26,7 +26,7 @@ cSM =
     columnsModifiers
 
 
-view : (Msg m -> m) -> Model -> (Maybe (List (Html m)) -> Html m) -> List (Html m)
+view : (Msg m -> m) -> Model -> (Maybe (List (Html m)) -> Maybe (List (Html m)) -> Html m) -> List (Html m)
 view lift model topNav =
     let
         bM route =
@@ -48,27 +48,25 @@ view lift model topNav =
     case model.subRoute of
         Searching ->
             [ columns myColumnsModifiers
-                [ class "page-wrap is-hidden-desktop" ]
+                [ class "page-wrap with-fixed-search is-hidden-desktop" ]
                 [ column cM
                     [ class "page-content-outer-controls" ]
                     [ div [ class "page-content-inner-controls" ]
-                        [ topNav (Just buttons)
-                        , searchInput lift model
+                        [ topNav (Just buttons) (Just [ searchInput lift model ])
                         , allPaliLetterButtons lift model
                         , viewLookupResults lift model
                         ]
                     ]
                 ]
             , columns myColumnsModifiers
-                [ class "page-wrap is-hidden-touch" ]
+                [ class "page-wrap with-fixed-search is-hidden-touch" ]
                 [ column cM
                     [ class "page-content-outer-controls" ]
                     [ div [ class "page-content-inner-controls" ]
-                        [ topNav (Just buttons)
+                        [ topNav (Just buttons) (Just [ searchInput lift model ])
                         , BL.section Spaced
                             []
-                            [ searchInput lift model
-                            , allPaliLetterButtons lift model
+                            [ allPaliLetterButtons lift model
                             , viewLookupResults lift model
                             ]
                         ]
@@ -90,7 +88,7 @@ view lift model topNav =
                 [ column cM
                     [ class "page-content-outer-controls" ]
                     [ div [ class "page-content-inner-controls" ]
-                        [ topNav (Just buttons)
+                        [ topNav (Just buttons) Nothing
                         , div [ class "dictionary-results" ]
                             (List.map (\x -> viewSelectedResultRow x lift model) model.selectedWordsList)
                         ]
@@ -356,10 +354,10 @@ update lift msg model =
 
         -- focus back on the input field
         -- FIXME Task.attempt (\_ -> NoOp) <| Dom.focus "query-input"
-
         AddToDictInput letter ->
             let
-                q = model.lookupQuery ++ letter
+                q =
+                    model.lookupQuery ++ letter
             in
             ( { model | lookupQuery = q }, fetchDictWord lift q )
 
