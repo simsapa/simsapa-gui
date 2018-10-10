@@ -202,11 +202,18 @@ viewLookupResultRow dictWord lift model =
 
             else
                 "mdi-pin-outline"
+
+        onClickFn =
+            if isSelected then
+                lift (RemoveFromSelectedResults dictWord)
+
+            else
+                lift (AddToSelectedResults dictWord)
     in
     div
         [ class "hover-gray"
         , style "padding" "0.5em"
-        , onClick (lift (AddToSelectedResults dictWord))
+        , onClick onClickFn
         ]
         [ columns { cSM | display = MobileAndBeyond }
             []

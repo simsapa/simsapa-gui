@@ -237,11 +237,17 @@ viewRootTextRow lift root_text model =
 
             else
                 "mdi-pin-outline"
+
+        onClickFn =
+            if isSelected then
+                (lift (RemoveFromSelectedTexts (SelectedRootText root_text)))
+            else
+                (lift (AddToSelectedTexts (SelectedRootText root_text)))
     in
     div
         [ class "hover-gray"
         , style "padding" "0.5em"
-        , onClick (lift (AddToSelectedTexts (SelectedRootText root_text)))
+        , onClick onClickFn
         ]
         [ columns { cSM | display = MobileAndBeyond }
             []
@@ -292,11 +298,17 @@ viewTranslatedTextRow lift translated_text model =
 
             else
                 "mdi-pin-outline"
+
+        onClickFn =
+            if isSelected then
+                (lift (RemoveFromSelectedTexts (SelectedTranslatedText translated_text)))
+            else
+                (lift (AddToSelectedTexts (SelectedTranslatedText translated_text)))
     in
     div
         [ class "hover-gray"
         , style "padding" "0.5em"
-        , onClick (lift (AddToSelectedTexts (SelectedTranslatedText translated_text)))
+        , onClick onClickFn
         ]
         [ columns { cSM | display = MobileAndBeyond }
             []
