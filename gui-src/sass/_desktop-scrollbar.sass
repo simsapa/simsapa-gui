@@ -1,0 +1,36 @@
+// Custom scrollbar on desktop
+
+// Android 5.1 WebView doesn't support custom scrollbar, so scope the custom
+// scroll with a class.
+
+html.simsapa-desktop
+  overflow: hidden
+  margin: 0
+  // have to allow .has-navbar-fixed-top to add padding-top
+  padding-left: 0
+  padding-right: 0
+  padding-bottom: 0
+
+  body
+    overflow: hidden
+    margin: 0
+    padding: 0
+
+  .page-content-inner-controls,
+  .page-content-inner-reading
+    height: 100%
+    overflow-y: scroll
+    overflow-x: hidden
+
+    &::-webkit-scrollbar
+      width: 6px
+
+    &::-webkit-scrollbar-thumb
+      -webkit-border-radius: 6px
+      border-radius: 6px
+      background: rgba(100,100,100,0.8)
+      -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5)
+
+    &::-webkit-scrollbar-thumb:window-inactive
+      background: rgba(100,100,100,0.1)
+

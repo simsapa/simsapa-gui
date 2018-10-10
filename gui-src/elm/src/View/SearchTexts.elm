@@ -55,18 +55,18 @@ view lift model topNav =
 
                 Just _ ->
                     column cM
-                        [ class "page-content-outer-reading-with-scroll" ]
-                        [ div [ class "page-content-inner-reading-with-scroll" ]
+                        [ class "page-content-outer-reading" ]
+                        [ div [ class "page-content-inner-reading" ]
                             [ readingHero div "split-view" lift model ]
                         ]
     in
     case model.subRoute of
         Searching ->
             [ columns myColumnsModifiers
-                [ class "page-wrap-with-scroll is-hidden-desktop" ]
+                [ class "page-wrap is-hidden-desktop" ]
                 [ column cM
-                    [ class "page-content-outer-controls-with-scroll" ]
-                    [ div [ class "page-content-inner-controls-with-scroll" ]
+                    [ class "page-content-outer-controls" ]
+                    [ div [ class "page-content-inner-controls" ]
                         [ topNav (Just buttons)
                         , searchInput lift model
                         , viewLookupResults lift model
@@ -74,10 +74,10 @@ view lift model topNav =
                     ]
                 ]
             , columns myColumnsModifiers
-                [ class "page-wrap-with-scroll is-hidden-touch" ]
+                [ class "page-wrap is-hidden-touch" ]
                 [ column cM
-                    [ class "page-content-outer-controls-with-scroll is-half" ]
-                    [ div [ class "page-content-inner-controls-with-scroll" ]
+                    [ class "page-content-outer-controls is-half" ]
+                    [ div [ class "page-content-inner-controls" ]
                         [ topNav (Just buttons)
                         , BL.section Spaced
                             []
@@ -92,10 +92,10 @@ view lift model topNav =
 
         Reading ->
             [ columns myColumnsModifiers
-                [ class "page-wrap-with-scroll" ]
+                [ class "page-wrap" ]
                 [ column cM
-                    [ class "page-content-outer-reading-with-scroll" ]
-                    [ div [ class "page-content-inner-reading-with-scroll" ]
+                    [ class "page-content-outer-reading" ]
+                    [ div [ class "page-content-inner-reading" ]
                         [ topNav (Just buttons)
                         , readingHero container "" lift model
                         ]
@@ -105,10 +105,10 @@ view lift model topNav =
 
         Selecting ->
             [ columns myColumnsModifiers
-                [ class "page-wrap-with-scroll" ]
+                [ class "page-wrap" ]
                 [ column cM
-                    [ class "page-content-outer-controls-with-scroll" ]
-                    [ div [ class "page-content-inner-controls-with-scroll" ]
+                    [ class "page-content-outer-controls" ]
+                    [ div [ class "page-content-inner-controls" ]
                         [ topNav (Just buttons)
                         , div [ class "selected-text-list-tabs" ]
                             [ selectedTextListTabs lift model ]

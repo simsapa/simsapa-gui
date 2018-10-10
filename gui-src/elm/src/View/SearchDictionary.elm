@@ -48,10 +48,10 @@ view lift model topNav =
     case model.subRoute of
         Searching ->
             [ columns myColumnsModifiers
-                [ class "page-wrap-with-scroll is-hidden-desktop" ]
+                [ class "page-wrap is-hidden-desktop" ]
                 [ column cM
-                    [ class "page-content-outer-controls-with-scroll" ]
-                    [ div [ class "page-content-inner-controls-with-scroll" ]
+                    [ class "page-content-outer-controls" ]
+                    [ div [ class "page-content-inner-controls" ]
                         [ topNav (Just buttons)
                         , searchInput lift model
                         , allPaliLetterButtons lift model
@@ -60,10 +60,10 @@ view lift model topNav =
                     ]
                 ]
             , columns myColumnsModifiers
-                [ class "page-wrap-with-scroll is-hidden-touch" ]
+                [ class "page-wrap is-hidden-touch" ]
                 [ column cM
-                    [ class "page-content-outer-controls-with-scroll" ]
-                    [ div [ class "page-content-inner-controls-with-scroll" ]
+                    [ class "page-content-outer-controls" ]
+                    [ div [ class "page-content-inner-controls" ]
                         [ topNav (Just buttons)
                         , BL.section Spaced
                             []
@@ -74,9 +74,9 @@ view lift model topNav =
                         ]
                     ]
                 , column cM
-                    [ class "page-content-outer-controls-with-scroll" ]
+                    [ class "page-content-outer-controls" ]
                     [ div
-                        [ class "page-content-inner-controls-with-scroll" ]
+                        [ class "page-content-inner-controls" ]
                         [ div [ class "dictionary-results" ]
                             (List.map (\x -> viewSelectedResultRow x lift model) model.selectedWordsList)
                         ]
@@ -86,10 +86,10 @@ view lift model topNav =
 
         Reading ->
             [ columns myColumnsModifiers
-                [ class "page-wrap-with-scroll" ]
+                [ class "page-wrap" ]
                 [ column cM
-                    [ class "page-content-outer-controls-with-scroll" ]
-                    [ div [ class "page-content-inner-controls-with-scroll" ]
+                    [ class "page-content-outer-controls" ]
+                    [ div [ class "page-content-inner-controls" ]
                         [ topNav (Just buttons)
                         , div [ class "dictionary-results" ]
                             (List.map (\x -> viewSelectedResultRow x lift model) model.selectedWordsList)
