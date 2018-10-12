@@ -37,12 +37,15 @@ view lift model buttons search =
                     x
 
         searchContent =
-            case search of
-                Nothing ->
-                    []
+          if model.isMenuOpen then
+              []
+          else
+              case search of
+                  Nothing ->
+                      []
 
-                Just x ->
-                    x
+                  Just x ->
+                      x
     in
     fixedNavbar Top
         navbarModifiers
@@ -137,7 +140,7 @@ update lift msg model =
             ( model, Cmd.none )
 
         NavigateTo route ->
-            ( { model | activeLink = Just route }, Cmd.none )
+            ( { model | activeLink = Just route, isMenuOpen = False }, Cmd.none )
 
         ToggleMenu ->
             ( { model | isMenuOpen = not model.isMenuOpen }, Cmd.none )
