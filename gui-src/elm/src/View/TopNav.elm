@@ -20,11 +20,6 @@ cSM =
     columnsModifiers
 
 
-
--- NOTE: transparent doesn't seem to work, using custom css instead
--- { navbarModifiers | transparent = True }
-
-
 view : (Msg m -> m) -> Model -> Maybe (List (Html m)) -> Maybe (List (Html m)) -> Html m
 view lift model buttons search =
     let
@@ -72,6 +67,7 @@ view lift model buttons search =
             [ navbarStart []
                 [ menuItem "Texts" "mdi-book-open" Route.SearchTexts lift model
                 , menuItem "Dictionary" "mdi-notebook" Route.SearchDictionary lift model
+                , menuItem "Settings" "mdi-settings" Route.Settings lift model
                 ]
             ]
         , navbarItem False

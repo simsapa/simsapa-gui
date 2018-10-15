@@ -5,3 +5,4 @@ type Route
     | ReadText
     | SearchTexts
     | SearchDictionary
+    | Settings

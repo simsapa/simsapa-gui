@@ -16,6 +16,7 @@ import Url
 import View.SearchDictionary
 import View.SearchTexts
 import View.TopNav
+import View.Settings
 
 
 main =
@@ -34,6 +35,7 @@ type alias Model =
     , topNav : View.TopNav.Model
     , searchTexts : View.SearchTexts.Model
     , searchDictionary : View.SearchDictionary.Model
+    , settings : View.Settings.Model
     }
 
 
@@ -44,11 +46,16 @@ type Msg
     | TopNavMsg (View.TopNav.Msg Msg)
     | SearchTextsMsg (View.SearchTexts.Msg Msg)
     | SearchDictionaryMsg (View.SearchDictionary.Msg Msg)
+    | SettingsMsg (View.Settings.Msg Msg)
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( initialModel, Cmd.none )
+    ( initialModel
+    , Cmd.batch [ View.Settings.fetchLocalVersion SettingsMsg
+                , View.Settings.fetchRemoteVersion SettingsMsg
+                ]
+    )
 
 
 initialModel =
@@ -56,6 +63,7 @@ initialModel =
     , topNav = View.TopNav.initialModel
     , searchTexts = View.SearchTexts.initialModel
     , searchDictionary = View.SearchDictionary.initialModel
+    , settings = View.Settings.initialModel
     }
 
 
@@ -103,6 +111,13 @@ update msg model =
             in
             ( { model | searchDictionary = searchDictionary }, effects )
 
+        SettingsMsg msg_ ->
+            let
+                ( settings, effects ) =
+                    View.Settings.update SettingsMsg msg_ model.settings
+            in
+            ( { model | settings = settings }, effects )
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -133,3 +148,6 @@ viewBody model =
 
         Route.SearchDictionary ->
             View.SearchDictionary.view SearchDictionaryMsg model.searchDictionary topNav
+
+        Route.Settings ->
+            View.Settings.view SettingsMsg model.settings topNav
