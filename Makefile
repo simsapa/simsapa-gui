@@ -6,3 +6,7 @@ elm-dev:
 
 elm-prod:
 	./scripts/build-elm-prod.sh
+
+backup-assets-tarball:
+	cd src && tar cjf static-assets.tar.bz2 static && mv static-assets.tar.bz2 ../../simsapa-db-backup/
+
