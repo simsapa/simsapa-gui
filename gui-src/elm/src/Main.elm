@@ -15,8 +15,8 @@ import Route exposing (Route)
 import Url
 import View.SearchDictionary
 import View.SearchTexts
-import View.TopNav
 import View.Settings
+import View.TopNav
 
 
 main =
@@ -52,9 +52,10 @@ type Msg
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     ( initialModel
-    , Cmd.batch [ View.Settings.fetchLocalVersion SettingsMsg
-                , View.Settings.fetchRemoteVersion SettingsMsg
-                ]
+    , Cmd.batch
+        [ View.Settings.fetchLocalVersion SettingsMsg
+        , View.Settings.fetchRemoteVersion SettingsMsg
+        ]
     )
 
 
@@ -115,8 +116,17 @@ update msg model =
             let
                 ( settings, effects ) =
                     View.Settings.update SettingsMsg msg_ model.settings
+
+                tn =
+                    model.topNav
+
+                tn_ =
+                    { tn | settingsHaveMessage = settings.haveMessage }
+
+                m =
+                    { model | settings = settings, topNav = tn_ }
             in
-            ( { model | settings = settings }, effects )
+            ( m, effects )
 
 
 view : Model -> Browser.Document Msg
