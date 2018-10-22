@@ -101,10 +101,12 @@ simsapaUpdate lift model =
         updIcon =
             ( Standard, [], icon Standard [] [ i [ class "mdi mdi-open-in-new" ] [] ] )
 
-        updateButton =
-            BE.button { buttonModifiers | color = Primary, iconLeft = Just updIcon }
-                []
-                [ text "Visit releases page" ]
+        updateButton version =
+            a [ href version.url, target "_blank" ]
+                [ BE.button { buttonModifiers | color = Primary, iconLeft = Just updIcon }
+                    []
+                    [ text "Visit releases page" ]
+                ]
     in
     case newSimsapa of
         NewVersion version ->
@@ -112,8 +114,8 @@ simsapaUpdate lift model =
                 [ h2 [] [ text "Simsapa" ]
                 , p [] [ text "A new version of the Simsapa application is available for download." ]
                 , p [] [ text "Visit the releases page to download:" ]
-                , p [] [ a [ href version.url ] [ text version.url ] ]
-                , updateButton
+                , p [] [ a [ href version.url, target "_blank" ] [ text version.url ] ]
+                , updateButton version
                 ]
 
         CurrentVersion version ->
