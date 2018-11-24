@@ -8,7 +8,7 @@ import Bulma.Layout as BL exposing (..)
 import Bulma.Modifiers exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onCheck, onClick, onInput)
+import Html.Events exposing (keyCode, on, onCheck, onClick, onInput, onSubmit)
 import Http
 import Json.Decode as Decode exposing (Decoder, int, list, string)
 import Json.Decode.Pipeline exposing (required)
@@ -509,34 +509,57 @@ viewSelectedTextBody lift model =
                         Markdown.toHtml mdRawHtml t_.content_html
 
 
+onEnter : msg -> Attribute msg
+onEnter msg =
+    keyCode
+        |> Decode.andThen
+            (\key ->
+                if key == 13 then
+                    Decode.succeed msg
+
+                else
+                    Decode.fail "Not enter"
+            )
+        |> on "keyup"
+
+
 searchInput : (Msg m -> m) -> Model -> Html m
 searchInput lift model =
     let
-        searchIcon =
-            ( Medium, [], icon Standard [] [ i [ class "mdi mdi-magnify", style "color" "black" ] [] ] )
+        searchButton =
+            let
+                bM =
+                    { buttonModifiers | size = Medium }
+            in
+            BE.button bM
+                [ onClick (lift SubmitLookupQuery) ]
+                [ icon Standard [] [ i [ class "mdi mdi-magnify", style "color" "black" ] [] ] ]
 
         myControlInputModifiers : ControlInputModifiers m
         myControlInputModifiers =
-            { controlInputModifiers | size = Medium, iconLeft = Just searchIcon }
+            { controlInputModifiers | size = Medium }
 
         myControlAttrs : List (Attribute m)
         myControlAttrs =
-            []
+            [ style "width" "100%" ]
 
         myInputAttrs : List (Attribute m)
         myInputAttrs =
             [ placeholder "Search in texts, e.g.: middle way, majjhima patipada, DN 16 ..."
             , autofocus True
             , onInput (\x -> lift (SetTextLookupQuery x))
+            , onEnter (lift SubmitLookupQuery)
             ]
     in
     div []
-        [ field []
-            [ controlLabel [] []
-            , controlText myControlInputModifiers
+        [ connectedFields Left
+            []
+            [ controlText
+                myControlInputModifiers
                 myControlAttrs
                 myInputAttrs
                 []
+            , searchButton
             ]
         , searchOptions lift model.queryOptions
         ]
@@ -754,6 +777,7 @@ type Msg m
     | AddToSelectedTexts SelectedText
     | RemoveFromSelectedTexts SelectedText
     | SetTextLookupQuery String
+    | SubmitLookupQuery
     | TextQueryDataReceived (WebData TextQueryData)
     | SetSelectedReadText SelectedText
     | SetSubRoute SubRoute
@@ -767,11 +791,14 @@ type Msg m
     | SetOptFulltext Bool
     | SetOptContainsExactly Bool
 
+
 lookupCmd lift query opts =
     if String.length query > 2 then
         fetchTextQuery lift query opts
+
     else
         Cmd.none
+
 
 update : (Msg m -> m) -> Msg m -> Model -> ( Model, Cmd m )
 update lift msg model =
@@ -780,7 +807,10 @@ update lift msg model =
             ( model, Cmd.none )
 
         SetTextLookupQuery query ->
-            ( { model | lookupQuery = query }, lookupCmd lift query model.queryOptions )
+            ( { model | lookupQuery = query }, Cmd.none )
+
+        SubmitLookupQuery ->
+            ( model, lookupCmd lift model.lookupQuery model.queryOptions )
 
         TextQueryDataReceived data ->
             case data of
