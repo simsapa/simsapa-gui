@@ -8,7 +8,7 @@ import Bulma.Layout as BL exposing (..)
 import Bulma.Modifiers exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (keyCode, on, onCheck, onClick, onInput, onSubmit)
 import Http
 import Json.Decode as Decode exposing (Decoder, int, list, string)
 import Json.Decode.Pipeline exposing (required)
@@ -82,7 +82,8 @@ view lift model topNav =
                     [ class "page-content-outer-controls is-half" ]
                     [ div [ class "page-content-inner-controls" ]
                         [ topNav (Just buttons) (Just [ searchInput lift model ])
-                        , BL.section Spaced []
+                        , BL.section Spaced
+                            []
                             [ viewLookupResults lift model ]
                         ]
                     ]
@@ -202,10 +203,131 @@ viewLookupResults lift model =
 
 viewQueryData : (Msg m -> m) -> TextQueryData -> Model -> Html m
 viewQueryData lift data model =
+    let
+        hits =
+            "Results: "
+                ++ String.fromInt data.root_texts.total_count
+                ++ " in Pali texts, "
+                ++ String.fromInt data.translated_texts.total_count
+                ++ " in translated texts"
+
+        all_root_texts =
+            data.root_texts.contains_exactly
+                |> List.append data.root_texts.fulltext
+                |> List.append data.root_texts.title_contains
+                |> List.append data.root_texts.acronym_contains
+                |> List.map (\x -> ItemRootText x)
+
+        all_translated_texts =
+            data.translated_texts.contains_exactly
+                |> List.append data.translated_texts.fulltext
+                |> List.append data.translated_texts.title_contains
+                |> List.append data.translated_texts.acronym_contains
+                |> List.map (\x -> ItemTranslatedText x)
+
+        all_texts =
+            List.append all_root_texts all_translated_texts
+
+        p =
+            model.paginationInfo
+
+        t =
+            List.drop ((p.currentPage - 1) * p.pageLength) all_texts
+
+        show_texts =
+            List.take p.pageLength t
+    in
     div [ class "search-results" ]
-        [ div [] (List.map (\x -> viewRootTextRow lift x model) data.root_texts)
-        , div [] (List.map (\x -> viewTranslatedTextRow lift x model) data.translated_texts)
+        [ div [ style "padding-bottom" "2em" ] [ text hits ]
+        , textPages lift model.paginationInfo
+        , div [] (List.map (\x -> viewTextRow lift x model) show_texts)
         ]
+
+
+textPages : (Msg m -> m) -> PaginationInfo -> Html m
+textPages lift paginationInfo =
+    let
+        pInf =
+            paginationInfo
+
+        cP =
+            pInf.currentPage
+
+        tP =
+            pInf.totalPages
+
+        pageList =
+            if pInf.totalPages <= 10 then
+                List.map
+                    (\x ->
+                        paginationLink (x == cP)
+                            [ onClick (lift (SetPagination x)) ]
+                            [ text (String.fromInt x) ]
+                    )
+                    (List.range 1 tP)
+
+            else if cP <= 3 then
+                [ paginationLink (1 == cP) [ onClick (lift (SetPagination 1)) ] [ text "1" ]
+                , paginationLink (2 == cP) [ onClick (lift (SetPagination 2)) ] [ text "2" ]
+                , paginationLink (3 == cP) [ onClick (lift (SetPagination 3)) ] [ text "3" ]
+                , paginationEllipsis [] [ text "..." ]
+                , paginationLink False
+                    [ onClick (lift (SetPagination tP)) ]
+                    [ text (String.fromInt tP) ]
+                ]
+
+            else if cP > 3 && cP < tP - 2 then
+                [ paginationLink False
+                    [ onClick (lift (SetPagination 1)) ]
+                    [ text "1" ]
+                , paginationEllipsis [] [ text "..." ]
+                , paginationLink False
+                    [ onClick (lift (SetPagination (cP - 1))) ]
+                    [ text (String.fromInt (cP - 1)) ]
+                , paginationLink True
+                    []
+                    [ text (String.fromInt cP) ]
+                , paginationLink False
+                    [ onClick (lift (SetPagination (cP + 1))) ]
+                    [ text (String.fromInt (cP + 1)) ]
+                , paginationEllipsis [] [ text "..." ]
+                , paginationLink False
+                    [ onClick (lift (SetPagination tP)) ]
+                    [ text (String.fromInt tP) ]
+                ]
+
+            else
+                [ paginationLink False
+                    [ onClick (lift (SetPagination 1)) ]
+                    [ text "1" ]
+                , paginationEllipsis [] [ text "..." ]
+                , paginationLink (tP - 2 == cP)
+                    [ onClick (lift (SetPagination (tP - 2))) ]
+                    [ text (String.fromInt (tP - 2)) ]
+                , paginationLink (tP - 1 == cP)
+                    [ onClick (lift (SetPagination (tP - 1))) ]
+                    [ text (String.fromInt (tP - 1)) ]
+                , paginationLink (tP == cP)
+                    [ onClick (lift (SetPagination tP)) ]
+                    [ text (String.fromInt tP) ]
+                ]
+    in
+    pagination Left
+        []
+        [ paginationPrev [ onClick (lift PaginationPrev) ] [ text "Previous" ]
+        , paginationNext [ onClick (lift PaginationNext) ] [ text "Next" ]
+        , paginationList [] pageList
+        ]
+
+
+viewTextRow : (Msg m -> m) -> TextItem -> Model -> Html m
+viewTextRow lift text_item model =
+    case text_item of
+        ItemRootText t ->
+            viewRootTextRow lift t model
+
+        ItemTranslatedText t ->
+            viewTranslatedTextRow lift t model
 
 
 viewRootTextRow : (Msg m -> m) -> RootText -> Model -> Html m
@@ -240,9 +362,10 @@ viewRootTextRow lift root_text model =
 
         onClickFn =
             if isSelected then
-                (lift (RemoveFromSelectedTexts (SelectedRootText root_text)))
+                lift (RemoveFromSelectedTexts (SelectedRootText root_text))
+
             else
-                (lift (AddToSelectedTexts (SelectedRootText root_text)))
+                lift (AddToSelectedTexts (SelectedRootText root_text))
     in
     div
         [ class "hover-gray"
@@ -301,9 +424,10 @@ viewTranslatedTextRow lift translated_text model =
 
         onClickFn =
             if isSelected then
-                (lift (RemoveFromSelectedTexts (SelectedTranslatedText translated_text)))
+                lift (RemoveFromSelectedTexts (SelectedTranslatedText translated_text))
+
             else
-                (lift (AddToSelectedTexts (SelectedTranslatedText translated_text)))
+                lift (AddToSelectedTexts (SelectedTranslatedText translated_text))
     in
     div
         [ class "hover-gray"
@@ -385,33 +509,108 @@ viewSelectedTextBody lift model =
                         Markdown.toHtml mdRawHtml t_.content_html
 
 
+onEnter : msg -> Attribute msg
+onEnter msg =
+    keyCode
+        |> Decode.andThen
+            (\key ->
+                if key == 13 then
+                    Decode.succeed msg
+
+                else
+                    Decode.fail "Not enter"
+            )
+        |> on "keyup"
+
+
 searchInput : (Msg m -> m) -> Model -> Html m
 searchInput lift model =
     let
-        searchIcon =
-            ( Medium, [], icon Standard [] [ i [ class "mdi mdi-magnify", style "color" "black" ] [] ] )
+        searchButton =
+            let
+                bM =
+                    { buttonModifiers | size = Medium }
+            in
+            BE.button bM
+                [ onClick (lift SubmitLookupQuery) ]
+                [ icon Standard [] [ i [ class "mdi mdi-magnify", style "color" "black" ] [] ] ]
 
         myControlInputModifiers : ControlInputModifiers m
         myControlInputModifiers =
-            { controlInputModifiers | size = Medium, iconLeft = Just searchIcon }
+            { controlInputModifiers | size = Medium }
 
         myControlAttrs : List (Attribute m)
         myControlAttrs =
-            []
+            [ style "width" "100%" ]
 
         myInputAttrs : List (Attribute m)
         myInputAttrs =
             [ placeholder "Search in texts, e.g.: middle way, majjhima patipada, DN 16 ..."
             , autofocus True
             , onInput (\x -> lift (SetTextLookupQuery x))
+            , onEnter (lift SubmitLookupQuery)
             ]
     in
-    field []
-        [ controlLabel [] []
-        , controlText myControlInputModifiers
-            myControlAttrs
-            myInputAttrs
+    div []
+        [ connectedFields Left
             []
+            [ controlText
+                myControlInputModifiers
+                myControlAttrs
+                myInputAttrs
+                []
+            , searchButton
+            ]
+        , searchOptions lift model.queryOptions
+        ]
+
+
+searchOptions : (Msg m -> m) -> QueryOptions -> Html m
+searchOptions lift opts =
+    fields Left
+        []
+        [ controlCheckBox False
+            []
+            []
+            [ onCheck (\x -> lift (SetOptRootTexts x))
+            , checked opts.rootTexts
+            ]
+            [ text "in Pali texts" ]
+        , controlCheckBox False
+            []
+            []
+            [ onCheck (\x -> lift (SetOptTranslatedTexts x))
+            , checked opts.translatedTexts
+            ]
+            [ text "in Translated texts" ]
+        , controlCheckBox False
+            []
+            []
+            [ onCheck (\x -> lift (SetOptAcronymContains x))
+            , checked opts.acronymContains
+            ]
+            [ text "in acronym" ]
+        , controlCheckBox False
+            []
+            []
+            [ onCheck (\x -> lift (SetOptTitleContains x))
+            , checked opts.titleContains
+            ]
+            [ text "in title" ]
+        , controlRadio []
+            [ controlRadioButton False
+                opts.fulltext
+                "fulltext"
+                []
+                [ onCheck (\x -> lift (SetOptFulltext x)) ]
+                [ text "fulltext matching" ]
+            , controlRadioButton False
+                opts.containsExactly
+                "exactly"
+                []
+                [ onCheck (\x -> lift (SetOptContainsExactly x)) ]
+                [ text "exactly matching" ]
+            ]
         ]
 
 
@@ -429,7 +628,9 @@ type alias Model =
     , lookupResults : WebData TextQueryData
     , selectedText : Maybe SelectedText
     , selectedTextList : List SelectedText
+    , paginationInfo : PaginationInfo
     , subRoute : SubRoute
+    , queryOptions : QueryOptions
     }
 
 
@@ -438,7 +639,9 @@ initialModel =
     , lookupResults = RemoteData.NotAsked
     , selectedText = Nothing
     , selectedTextList = []
+    , paginationInfo = initialPaginationInfo
     , subRoute = Searching
+    , queryOptions = initialQueryOptions
     }
 
 
@@ -454,6 +657,42 @@ initialTranslatedText =
     , content_language = "en"
     , content_plain = "Lorem ipsum"
     , content_html = "<p>Lorem ipsum</p><p><em>Lorem ispum</em></p>"
+    }
+
+
+initialPaginationInfo : PaginationInfo
+initialPaginationInfo =
+    { pageLength = 30
+    , currentPage = 1
+    , totalPages = 1
+    }
+
+
+initialQueryOptions : QueryOptions
+initialQueryOptions =
+    { rootTexts = True
+    , translatedTexts = True
+    , acronymContains = True
+    , titleContains = True
+    , fulltext = True
+    , containsExactly = False
+    }
+
+
+type alias QueryOptions =
+    { rootTexts : Bool
+    , translatedTexts : Bool
+    , acronymContains : Bool
+    , titleContains : Bool
+    , fulltext : Bool
+    , containsExactly : Bool
+    }
+
+
+type alias PaginationInfo =
+    { pageLength : Int
+    , currentPage : Int
+    , totalPages : Int
     }
 
 
@@ -493,15 +732,38 @@ type alias TranslatedText =
     }
 
 
+type alias RootTextSearches =
+    { acronym_contains : List RootText
+    , title_contains : List RootText
+    , contains_exactly : List RootText
+    , fulltext : List RootText
+    , total_count : Int
+    }
+
+
+type alias TranslatedTextSearches =
+    { acronym_contains : List TranslatedText
+    , title_contains : List TranslatedText
+    , contains_exactly : List TranslatedText
+    , fulltext : List TranslatedText
+    , total_count : Int
+    }
+
+
 type alias TextQueryData =
-    { root_texts : List RootText
-    , translated_texts : List TranslatedText
+    { root_texts : RootTextSearches
+    , translated_texts : TranslatedTextSearches
     }
 
 
 type SelectedText
     = SelectedRootText RootText
     | SelectedTranslatedText TranslatedText
+
+
+type TextItem
+    = ItemRootText RootText
+    | ItemTranslatedText TranslatedText
 
 
 type SubRoute
@@ -515,9 +777,27 @@ type Msg m
     | AddToSelectedTexts SelectedText
     | RemoveFromSelectedTexts SelectedText
     | SetTextLookupQuery String
+    | SubmitLookupQuery
     | TextQueryDataReceived (WebData TextQueryData)
     | SetSelectedReadText SelectedText
     | SetSubRoute SubRoute
+    | PaginationPrev
+    | PaginationNext
+    | SetPagination Int
+    | SetOptRootTexts Bool
+    | SetOptTranslatedTexts Bool
+    | SetOptAcronymContains Bool
+    | SetOptTitleContains Bool
+    | SetOptFulltext Bool
+    | SetOptContainsExactly Bool
+
+
+lookupCmd lift query opts =
+    if String.length query > 2 then
+        fetchTextQuery lift query opts
+
+    else
+        Cmd.none
 
 
 update : (Msg m -> m) -> Msg m -> Model -> ( Model, Cmd m )
@@ -527,18 +807,44 @@ update lift msg model =
             ( model, Cmd.none )
 
         SetTextLookupQuery query ->
-            let
-                lookupCmd =
-                    if String.length query > 2 then
-                        fetchTextQuery lift query
+            ( { model | lookupQuery = query }, Cmd.none )
 
-                    else
-                        Cmd.none
-            in
-            ( { model | lookupQuery = query }, lookupCmd )
+        SubmitLookupQuery ->
+            ( model, lookupCmd lift model.lookupQuery model.queryOptions )
 
         TextQueryDataReceived data ->
-            ( { model | lookupResults = data }, Cmd.none )
+            case data of
+                RemoteData.NotAsked ->
+                    ( { model | lookupResults = data }, Cmd.none )
+
+                RemoteData.Loading ->
+                    ( { model | lookupResults = data }, Cmd.none )
+
+                RemoteData.Failure _ ->
+                    ( { model | lookupResults = data }, Cmd.none )
+
+                RemoteData.Success res ->
+                    let
+                        p =
+                            model.paginationInfo
+
+                        count =
+                            res.root_texts.total_count + res.translated_texts.total_count
+
+                        t =
+                            ceiling (toFloat count / toFloat p.pageLength)
+
+                        curr =
+                            if p.currentPage > t then
+                                t
+
+                            else
+                                p.currentPage
+
+                        p_ =
+                            { p | totalPages = t, currentPage = curr }
+                    in
+                    ( { model | lookupResults = data, paginationInfo = p_ }, Cmd.none )
 
         AddToSelectedTexts selectedText ->
             let
@@ -579,6 +885,110 @@ update lift msg model =
 
         SetSubRoute x ->
             ( { model | subRoute = x }, Cmd.none )
+
+        PaginationPrev ->
+            let
+                p =
+                    model.paginationInfo
+
+                curr =
+                    if p.currentPage > 1 then
+                        p.currentPage - 1
+
+                    else
+                        p.currentPage
+
+                p_ =
+                    { p | currentPage = curr }
+            in
+            ( { model | paginationInfo = p_ }, Cmd.none )
+
+        PaginationNext ->
+            let
+                p =
+                    model.paginationInfo
+
+                curr =
+                    if p.currentPage < p.totalPages then
+                        p.currentPage + 1
+
+                    else
+                        p.currentPage
+
+                p_ =
+                    { p | currentPage = curr }
+            in
+            ( { model | paginationInfo = p_ }, Cmd.none )
+
+        SetPagination x ->
+            let
+                p =
+                    model.paginationInfo
+
+                p_ =
+                    { p | currentPage = x }
+            in
+            ( { model | paginationInfo = p_ }, Cmd.none )
+
+        SetOptRootTexts x ->
+            let
+                o =
+                    model.queryOptions
+
+                o_ =
+                    { o | rootTexts = x }
+            in
+            ( { model | queryOptions = o_ }, lookupCmd lift model.lookupQuery o_ )
+
+        SetOptTranslatedTexts x ->
+            let
+                o =
+                    model.queryOptions
+
+                o_ =
+                    { o | translatedTexts = x }
+            in
+            ( { model | queryOptions = o_ }, lookupCmd lift model.lookupQuery o_ )
+
+        SetOptAcronymContains x ->
+            let
+                o =
+                    model.queryOptions
+
+                o_ =
+                    { o | acronymContains = x }
+            in
+            ( { model | queryOptions = o_ }, lookupCmd lift model.lookupQuery o_ )
+
+        SetOptTitleContains x ->
+            let
+                o =
+                    model.queryOptions
+
+                o_ =
+                    { o | titleContains = x }
+            in
+            ( { model | queryOptions = o_ }, lookupCmd lift model.lookupQuery o_ )
+
+        SetOptFulltext x ->
+            let
+                o =
+                    model.queryOptions
+
+                o_ =
+                    { o | fulltext = x, containsExactly = not x }
+            in
+            ( { model | queryOptions = o_ }, lookupCmd lift model.lookupQuery o_ )
+
+        SetOptContainsExactly x ->
+            let
+                o =
+                    model.queryOptions
+
+                o_ =
+                    { o | fulltext = not x, containsExactly = x }
+            in
+            ( { model | queryOptions = o_ }, lookupCmd lift model.lookupQuery o_ )
 
 
 getUid t =
@@ -629,16 +1039,63 @@ translatedTextDecoder =
         |> required "content_html" string
 
 
+textRootTextSearchesDecoder : Decoder RootTextSearches
+textRootTextSearchesDecoder =
+    Decode.succeed RootTextSearches
+        |> required "acronym_contains" (list rootTextDecoder)
+        |> required "title_contains" (list rootTextDecoder)
+        |> required "contains_exactly" (list rootTextDecoder)
+        |> required "fulltext" (list rootTextDecoder)
+        |> required "total_count" int
+
+
+textTranslatedTextSearchesDecoder : Decoder TranslatedTextSearches
+textTranslatedTextSearchesDecoder =
+    Decode.succeed TranslatedTextSearches
+        |> required "acronym_contains" (list translatedTextDecoder)
+        |> required "title_contains" (list translatedTextDecoder)
+        |> required "contains_exactly" (list translatedTextDecoder)
+        |> required "fulltext" (list translatedTextDecoder)
+        |> required "total_count" int
+
+
 textQueryDataDecoder : Decoder TextQueryData
 textQueryDataDecoder =
     Decode.succeed TextQueryData
-        |> required "root_texts" (list rootTextDecoder)
-        |> required "translated_texts" (list translatedTextDecoder)
+        |> required "root_texts" textRootTextSearchesDecoder
+        |> required "translated_texts" textTranslatedTextSearchesDecoder
 
 
-fetchTextQuery : (Msg m -> m) -> String -> Cmd m
-fetchTextQuery lift query =
+optsToQuery opts =
+    let
+        f =
+            \x ->
+                if Tuple.second x then
+                    UB.string (Tuple.first x) "true"
+
+                else
+                    UB.string (Tuple.first x) "false"
+    in
+    List.map f
+        [ ( "root_texts", opts.rootTexts )
+        , ( "translated_texts", opts.translatedTexts )
+        , ( "acronym_contains", opts.acronymContains )
+        , ( "title_contains", opts.titleContains )
+        , ( "fulltext", opts.fulltext )
+        , ( "contains_exactly", opts.containsExactly )
+        ]
+
+
+fetchTextQuery : (Msg m -> m) -> String -> QueryOptions -> Cmd m
+fetchTextQuery lift query opts =
     textQueryDataDecoder
-        |> Http.get (UB.absolute [ "search", "texts" ] [ UB.string "query" query ])
+        |> Http.get
+            (UB.absolute
+                [ "search", "texts" ]
+                (List.append
+                    [ UB.string "query" query ]
+                    (optsToQuery opts)
+                )
+            )
         |> RemoteData.sendRequest
         |> Cmd.map (\x -> lift (TextQueryDataReceived x))

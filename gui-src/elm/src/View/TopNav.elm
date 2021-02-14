@@ -1,11 +1,12 @@
 module View.TopNav exposing (Model, Msg(..), initialModel, update, view)
 
 import Bulma.Columns exposing (..)
-import Bulma.Layout as BL exposing (..)
 import Bulma.Components exposing (..)
 import Bulma.Elements as BE exposing (..)
 import Bulma.Form exposing (..)
+import Bulma.Layout as BL exposing (..)
 import Bulma.Modifiers exposing (..)
+import Bulma.Modifiers.Typography as BT exposing (textColor)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
@@ -32,15 +33,16 @@ view lift model buttons search =
                     x
 
         searchContent =
-          if model.isMenuOpen then
-              []
-          else
-              case search of
-                  Nothing ->
-                      []
+            if model.isMenuOpen then
+                []
 
-                  Just x ->
-                      x
+            else
+                case search of
+                    Nothing ->
+                        []
+
+                    Just x ->
+                        x
     in
     fixedNavbar Top
         navbarModifiers
@@ -65,22 +67,27 @@ view lift model buttons search =
         , navbarMenu model.isMenuOpen
             []
             [ navbarStart []
-                [ menuItem "Texts" "mdi-book-open" Route.SearchTexts lift model
-                , menuItem "Dictionary" "mdi-notebook" Route.SearchDictionary lift model
-                , menuItem "Settings" "mdi-settings" Route.Settings lift model
+                [ menuItem "Texts" "mdi-book-open" Route.SearchTexts False lift model
+                , menuItem "Dictionary" "mdi-notebook" Route.SearchDictionary False lift model
+                ]
+            , navbarEnd []
+                [ menuItem "Settings" "mdi-settings" Route.Settings model.settingsHaveMessage lift model
+                , div [ style "width" "2em" ] []
                 ]
             ]
         , navbarItem False
             [ class "navbar-fixed-search" ]
-            [ columns cSM []
-                [ column cM [ class "is-half" ]
+            [ columns cSM
+                []
+                [ column cM
+                    [ class "is-half" ]
                     searchContent
                 ]
             ]
         ]
 
 
-menuItem itemText itemIcon itemRoute lift model =
+menuItem itemText itemIcon itemRoute haveMessage lift model =
     let
         isActive_ =
             isActive model itemRoute
@@ -91,12 +98,20 @@ menuItem itemText itemIcon itemRoute lift model =
 
             else
                 "is-tab"
+
+        messageIcon =
+            if haveMessage then
+                icon Standard [ textColor BT.Info ] [ i [ class ("mdi " ++ "mdi-message-alert") ] [] ]
+
+            else
+                span [] []
     in
     navbarItemLink isActive_
         [ onClick (lift (NavigateTo itemRoute))
         , class itemClass
         ]
         [ icon Standard [] [ i [ class ("mdi " ++ itemIcon) ] [] ]
+        , messageIcon
         , span [] [ text itemText ]
         ]
 
@@ -114,12 +129,14 @@ isActive model route =
 type alias Model =
     { activeLink : Maybe Route
     , isMenuOpen : Bool
+    , settingsHaveMessage : Bool
     }
 
 
 initialModel =
     { activeLink = Just Route.SearchTexts
     , isMenuOpen = False
+    , settingsHaveMessage = False
     }
 
 
